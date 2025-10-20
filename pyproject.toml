@@ -1,0 +1,41 @@
+﻿[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rapid-irl-nav"
+version = "0.1.0"
+description = "Research scaffold for Rapid IRL navigation experiments"
+readme = "README.md"
+authors = [
+  { name = "Ratan Bunkar" }
+]
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = [
+  "torch",
+  "torchvision",
+  "numpy",
+  "pyyaml",
+  "tqdm",
+  "tensorboard",
+  "opencv-python",
+  "einops",
+  "scipy",
+  "rich",
+  "tyro",
+  "pydantic",
+  "matplotlib"
+]
+
+[project.optional-dependencies]
+cli = ["tyro"]
+
+[project.scripts]
+rapid-irl-train = "rapid_irl_nav.cli.train:main"
+rapid-irl-eval = "rapid_irl_nav.cli.evaluate:main"
+rapid-irl-collect = "rapid_irl_nav.cli.collect_expert:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

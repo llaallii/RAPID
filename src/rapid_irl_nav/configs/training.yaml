@@ -1,0 +1,7 @@
+﻿batch_size: 128
+lr: 3.0e-4
+gamma: 0.99
+tau: 0.005
+horizon_steps: 10
+dt: 0.1
+image_size: 64
