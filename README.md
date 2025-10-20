@@ -1,4 +1,4 @@
-﻿# rapid_irl_nav
+# rapid_irl_nav
 
 Prototype scaffold for the Rapid IRL Navigation project. The package provides
 placeholders for data handling, simulation interfaces, inverse reinforcement
