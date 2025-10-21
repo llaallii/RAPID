@@ -21,7 +21,7 @@ experiments/
 *.pth
 
 # TensorBoard / logs
-runs/
+runs/**
 logs/
 lightning_logs/
 *.log
@@ -34,3 +34,7 @@ lightning_logs/
 # Misc
 .DS_Store
 Thumbs.db
+data/**
+*.npy
+*.parquet
+*.png

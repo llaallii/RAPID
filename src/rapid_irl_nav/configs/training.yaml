@@ -5,3 +5,12 @@ tau: 0.005
 horizon_steps: 10
 dt: 0.1
 image_size: 64
+# collection
+collector:
+  dt: 0.1
+  max_steps: 300
+  success_radius: 0.2
+  episodes: 50
+  dataset_root: "data/rapid_demo"
+  seed: 123
+  max_eps_per_shard: 200

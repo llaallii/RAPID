@@ -1,0 +1,22 @@
+name: rapid
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python ~=3.10
+  - pip
+  - pytorch
+  - torchvision
+  - numpy
+  - pyyaml
+  - tqdm
+  - tensorboard
+  - opencv
+  - einops
+  - scipy
+  - rich
+  - tyro
+  - pydantic
+  - matplotlib
+  - pandas
+  - pyarrow

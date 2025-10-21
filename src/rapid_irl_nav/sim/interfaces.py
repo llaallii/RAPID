@@ -1,54 +1,33 @@
-﻿"""Interfaces describing how we interact with simulators or log files."""
+"""Core simulator and expert interfaces."""
 
 from __future__ import annotations
 
-import abc
-from pathlib import Path
-from typing import Dict, Iterator, Optional
+from dataclasses import dataclass
+from typing import Optional, Protocol, Tuple
 
 import numpy as np
 
-from ..data.schemas import RapidNavTimestep
+
+@dataclass
+class Obs:
+    depth: np.ndarray         # (1,64,64) float32
+    vel: np.ndarray           # (3,) float32 -> (vx, vy, wz)
+    quat: np.ndarray          # (4,) float32 [w,x,y,z]
+    pos_xy: np.ndarray        # (2,) float32 (world)
+    goal: np.ndarray          # (3,) float32 (gx, gy, gyaw)
 
 
-class ObservationSource(abc.ABC):
-    """Abstract source that yields timesteps."""
+class Env(Protocol):
+    def reset(self, seed: Optional[int] = None) -> Obs:
+        ...
 
-    @abc.abstractmethod
-    def reset(self) -> None:
-        """Reset the iterator to the start of a new episode."""
-
-    @abc.abstractmethod
-    def __iter__(self) -> Iterator[RapidNavTimestep]:
+    def step(self, action: np.ndarray) -> Tuple[Obs, float, bool, dict]:
         ...
 
 
-class RecordedDatasetSource(ObservationSource):
-    """Source that replays timesteps from a pre-recorded dataset."""
-
-    def __init__(self, path: Path) -> None:
-        self.path = path
-        self._timesteps = self._load(path)
-        self._cursor = 0
-
-    def _load(self, path: Path) -> np.ndarray:
-        if not path.exists():
-            raise FileNotFoundError(path)
-        # TODO: replace with proper on-disk format (e.g. NPZ / Parquet)
-        return np.load(path, allow_pickle=True)
-
-    def reset(self) -> None:
-        self._cursor = 0
-
-    def __iter__(self) -> Iterator[RapidNavTimestep]:
-        self.reset()
-        while self._cursor < len(self._timesteps):
-            payload: Dict[str, np.ndarray] = self._timesteps[self._cursor].item()
-            self._cursor += 1
-            yield RapidNavTimestep(**payload)
+class Expert(Protocol):
+    def act(self, obs: Obs) -> np.ndarray:
+        ...
 
 
-# TODO: Provide an ObservationSource backed by Isaac Sim for hardware-in-the-loop experiments.
-
-
-__all__ = ["ObservationSource", "RecordedDatasetSource"]
+__all__ = ["Obs", "Env", "Expert"]

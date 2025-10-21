@@ -25,7 +25,9 @@ dependencies = [
   "rich",
   "tyro",
   "pydantic",
-  "matplotlib"
+  "matplotlib",
+  "pandas",
+  "pyarrow"
 ]
 
 [project.optional-dependencies]
