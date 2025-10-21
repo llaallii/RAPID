@@ -74,6 +74,7 @@ Then inspect the available commands:
 python -m rapid_irl_nav.cli.train --help
 python -m rapid_irl_nav.cli.evaluate --help
 python -m rapid_irl_nav.cli.collect_expert --help
+python -m rapid_v2.tools.smoke_env --help
 ```
 
 The modules ship with stubbed implementations and TODOs that we will flesh out
@@ -96,3 +97,15 @@ $ python -m rapid_irl_nav.cli.collect_expert --dataset-root data/rapid_demo --ep
 $ python -m rapid_irl_nav.cli.validate_dataset --dataset-root data/rapid_demo
 $ python -m rapid_irl_nav.cli.view_episode --dataset-root data/rapid_demo --idx 0
 ```
+
+## Phase 0 Layout Migration
+
+Phase 0 introduces `rapid_v2`, a parallel package that stages the future Isaac Sim
+pipeline while keeping the legacy CLI stable.
+
+- Run the ToyWorld bridge smoke test via `python -m rapid_v2.tools.smoke_env --seed 123`
+  (behind the console script `rapid-v2-smoke`).
+- See `docs/layout_migration_mapping.md` for module-by-module mapping notes.
+- Legacy commands continue to work; `collect_expert` now resolves its backend through
+  `rapid_v2.env_builder.build_toy_world`, so downstream phases can swap builders without
+  rewriting the CLI.

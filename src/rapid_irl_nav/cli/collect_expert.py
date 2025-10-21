@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Callable, Optional, TYPE_CHECKING
 
 from rich.console import Console
 from rich.progress import Progress
@@ -16,8 +16,15 @@ except ImportError:  # pragma: no cover
     tyro = None  # type: ignore
     import argparse
 
+from rapid_v2.env_builder import BuilderConfig, build_toy_world
+from rapid_v2.randomization_utils import RandomizationConfig, wrap_policy
+
 from ..data.record import SCHEMA_VERSION, DatasetMeta, ShardManager, write_index
-from ..sim.toy_world import ScriptedExpert, ToyWorld, ToyWorldConfig
+from ..sim.toy_world import ToyWorldConfig
+
+if TYPE_CHECKING:
+    from rapid_irl_nav.sim.toy_world import ToyWorld
+    from rapid_irl_nav.sim.interfaces import Obs
 
 
 def _default_dataset_meta() -> DatasetMeta:
@@ -47,6 +54,7 @@ class CollectArgs:
     success_radius: float = 0.2
     max_eps_per_shard: int = 200
     dt: float = 0.1
+    yaw_jitter: float = 0.0
 
 
 def _parse_args() -> CollectArgs:
@@ -61,6 +69,12 @@ def _parse_args() -> CollectArgs:
     parser.add_argument("--success-radius", type=float, default=CollectArgs.success_radius)
     parser.add_argument("--max-eps-per-shard", type=int, default=CollectArgs.max_eps_per_shard)
     parser.add_argument("--dt", type=float, default=CollectArgs.dt)
+    parser.add_argument(
+        "--yaw-jitter",
+        type=float,
+        default=CollectArgs.yaw_jitter,
+        help="Stddev for yaw perturbations applied via rapid_v2.randomization_utils.",
+    )
     ns = parser.parse_args()
     return CollectArgs(
         dataset_root=ns.dataset_root,
@@ -70,6 +84,7 @@ def _parse_args() -> CollectArgs:
         success_radius=ns.success_radius,
         max_eps_per_shard=ns.max_eps_per_shard,
         dt=ns.dt,
+        yaw_jitter=ns.yaw_jitter,
     )
 
 
@@ -81,8 +96,8 @@ def _timestamp_generator(start_time: float, dt: float):
 
 
 def collect_episode(
-    env: ToyWorld,
-    expert: ScriptedExpert,
+    env: "ToyWorld",
+    actor: Callable[["Obs"], object],
     writer,
     initial_obs,
     *,
@@ -98,7 +113,7 @@ def collect_episode(
     last_info: dict = {}
 
     for step in range(max_steps):
-        action = expert.act(obs)
+        action = actor(obs)
         next_obs, _, done, info = env.step(action)
         ts = next(timestamp_iter)
 
@@ -135,8 +150,11 @@ def main(args: Optional[CollectArgs] = None) -> None:
         args = _parse_args()
 
     config = ToyWorldConfig(dt=args.dt, max_steps=args.max_steps, success_radius=args.success_radius)
-    env = ToyWorld(config=config, seed=args.seed)
-    expert = ScriptedExpert()
+    builder_cfg = BuilderConfig(seed=args.seed)
+    backend = build_toy_world(builder_cfg, toy_config=config)
+    random_cfg = RandomizationConfig(seed=args.seed, yaw_jitter=args.yaw_jitter)
+    base_policy = backend.expert.act
+    env = backend.env
     manager = ShardManager(
         args.dataset_root,
         dataset_meta=_default_dataset_meta(),
@@ -156,10 +174,18 @@ def main(args: Optional[CollectArgs] = None) -> None:
                 goal_xy=obs.goal[:2],
                 seed=episode_seed,
             )
+            policy_seed = None
+            if random_cfg.seed is not None:
+                policy_seed = random_cfg.seed + episode_idx
+            actor = wrap_policy(
+                base_policy,
+                yaw_std=random_cfg.yaw_jitter,
+                seed=policy_seed,
+            )
 
             steps, success, _ = collect_episode(
                 env,
-                expert,
+                actor,
                 writer,
                 initial_obs=obs,
                 dt=args.dt,

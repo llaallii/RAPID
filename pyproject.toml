@@ -37,6 +37,7 @@ cli = ["tyro"]
 rapid-irl-train = "rapid_irl_nav.cli.train:main"
 rapid-irl-eval = "rapid_irl_nav.cli.evaluate:main"
 rapid-irl-collect = "rapid_irl_nav.cli.collect_expert:main"
+rapid-v2-smoke = "rapid_v2.tools.smoke_env:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
